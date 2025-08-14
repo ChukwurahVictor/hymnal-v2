@@ -1,0 +1,17 @@
+-- AlterTable
+ALTER TABLE "categories" ALTER COLUMN "deletedAt" SET DATA TYPE TIMESTAMPTZ(6);
+
+-- AlterTable
+ALTER TABLE "choruses" ALTER COLUMN "deletedAt" SET DATA TYPE TIMESTAMPTZ(6);
+
+-- AlterTable
+ALTER TABLE "hymns" ALTER COLUMN "deletedAt" SET DATA TYPE TIMESTAMPTZ(6);
+
+-- AlterTable
+ALTER TABLE "solfa_images" ALTER COLUMN "deletedAt" SET DATA TYPE TIMESTAMPTZ(6);
+
+-- AlterTable
+ALTER TABLE "users" ALTER COLUMN "deletedAt" SET DATA TYPE TIMESTAMPTZ(6);
+
+-- AlterTable
+ALTER TABLE "verses" ALTER COLUMN "deletedAt" SET DATA TYPE TIMESTAMPTZ(6);

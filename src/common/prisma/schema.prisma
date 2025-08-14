@@ -1,0 +1,162 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Roles {
+  Admin
+  User
+}
+
+enum ActionType {
+  CREATE
+  UPDATE
+  DELETE
+  LOGIN
+  LOGOUT
+}
+
+enum EntityType {
+  USER
+  HYMN
+  CATEGORY
+  VERSE
+  CHORUS
+  SOLFA_IMAGE
+}
+
+enum UserStatus {
+  Active
+  Inactive
+}
+
+enum HymnStatus {
+  Published
+  Draft
+  UnderReview
+  Archived
+}
+
+model User {
+  id         String     @id @default(uuid()) @db.Uuid
+  firstName  String
+  lastName   String
+  email      String     @unique
+  password   String
+  role       Roles      @default(User)
+  status     UserStatus @default(Active)
+  createdAt  DateTime   @default(now()) @db.Timestamptz(6)
+  createdBy  String?
+  updatedAt  DateTime   @updatedAt() @db.Timestamptz(6)
+  updatedBy  String?
+  hymns      Hymn[]     @relation("UserHymns")
+  categories Category[] @relation("UserCategories")
+  auditLogs  AuditLog[]
+  deletedAt  DateTime?  @db.Timestamptz(6)
+
+  @@index([email])
+  @@map("users")
+}
+
+model Hymn {
+  id          String       @id @default(uuid()) @db.Uuid
+  number      Int?         @unique
+  title       String
+  slug        String       @unique
+  category    Category?    @relation(fields: [categoryId], references: [id])
+  categoryId  String       @db.Uuid
+  author      String?
+  language    String?
+  version     String?
+  verses      Verse[]      @relation("HymnVerses")
+  choruses    Chorus[]     @relation("HymnChoruses")
+  solfaImages SolfaImage[] @relation("HymnSolfaImages")
+  status      HymnStatus   @default(Published)
+  createdBy   User?        @relation("UserHymns", fields: [createdById], references: [id])
+  createdById String?      @db.Uuid
+  createdAt   DateTime     @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime     @updatedAt() @db.Timestamptz(6)
+  updatedBy   String?
+  deletedAt   DateTime?    @db.Timestamptz(6)
+
+  @@index([title])
+  @@index([number])
+  @@index([deletedAt])
+  @@index([categoryId])
+  @@map("hymns")
+}
+
+model Category {
+  id          String    @id @default(uuid()) @db.Uuid
+  name        String
+  slug        String    @unique
+  hymns       Hymn[]
+  createdBy   User?     @relation("UserCategories", fields: [createdById], references: [id])
+  createdById String?   @db.Uuid
+  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime  @updatedAt() @db.Timestamptz(6)
+  updatedBy   String?
+  deletedAt   DateTime? @db.Timestamptz(6)
+
+  @@index([name])
+  @@map("categories")
+}
+
+model Chorus {
+  id        String    @id @default(uuid()) @db.Uuid
+  text      String
+  hymn      Hymn      @relation("HymnChoruses", fields: [hymnId], references: [id])
+  hymnId    String    @db.Uuid
+  description String? @db.Text
+  createdAt DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime  @updatedAt() @db.Timestamptz(6)
+  updatedBy String?
+  deletedAt DateTime? @db.Timestamptz(6)
+
+  @@map("choruses")
+}
+
+model Verse {
+  id        String    @id @default(uuid()) @db.Uuid
+  text      String
+  hymn      Hymn      @relation("HymnVerses", fields: [hymnId], references: [id])
+  order     Int?
+  hymnId    String    @db.Uuid
+  createdAt DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime  @updatedAt() @db.Timestamptz(6)
+  updatedBy String?
+  deletedAt DateTime? @db.Timestamptz(6)
+
+  @@map("verses")
+}
+
+model SolfaImage {
+  id        String    @id @default(uuid()) @db.Uuid
+  imageUrl  String
+  hymn      Hymn      @relation("HymnSolfaImages", fields: [hymnId], references: [id])
+  hymnId    String    @db.Uuid
+  createdAt DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime  @updatedAt() @db.Timestamptz(6)
+  deletedAt DateTime? @db.Timestamptz(6)
+
+  @@map("solfa_images")
+}
+
+model AuditLog {
+  id         String     @id @default(uuid()) @db.Uuid
+  action     ActionType
+  entityType EntityType
+  entityId   String
+  details    Json?
+  ipAddress  String?
+  userAgent  String?
+  userId     String     @db.Uuid
+  user       User       @relation(fields: [userId], references: [id])
+  createdAt  DateTime   @default(now())
+
+  @@map("audit_logs")
+}
