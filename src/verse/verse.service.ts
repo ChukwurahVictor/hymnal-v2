@@ -50,7 +50,7 @@ export class VerseService {
           text,
           order: order || null,
           createdAt: new Date(),
-          updatedBy: user?.id || null,
+          updatedById: user?.id || null,
         },
       });
       return createdVerse;
@@ -86,7 +86,7 @@ export class VerseService {
         where: { id },
         data: {
           deletedAt: new Date(),
-          updatedBy: user.id,
+          updatedById: user.id,
         },
         select: {
           id: true,

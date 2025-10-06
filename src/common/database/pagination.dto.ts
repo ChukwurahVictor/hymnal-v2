@@ -2,7 +2,7 @@ import { ApiHideProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
   IsBase64,
-  //   IsEnum,
+  IsEnum,
   IsInt,
   IsNotEmpty,
   IsOptional,
@@ -10,7 +10,7 @@ import {
   Max,
   Min,
 } from 'class-validator';
-// import { SortDirection } from 'src/common/interfaces';
+import { SortDirection } from 'src/common/interfaces';
 
 export class PaginationOptionsDto {
   @IsBase64()
@@ -28,9 +28,9 @@ export class PaginationOptionsDto {
   @IsOptional()
   orderBy?: string;
 
-  //   @IsEnum(SortDirection)
-  //   @IsOptional()
-  //   direction?: SortDirection = SortDirection.DESC;
+  @IsEnum(SortDirection)
+  @IsOptional()
+  direction?: SortDirection = SortDirection.DESC;
 
   @ApiHideProperty()
   @IsNotEmpty()

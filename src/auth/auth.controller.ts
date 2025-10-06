@@ -1,4 +1,11 @@
-import { Body, Controller, Post, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  HttpCode,
+  Post,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ResponseMessage } from 'src/common/decorators/response.decorator';
@@ -24,6 +31,7 @@ export class AuthController {
   }
 
   @Post('/login')
+  @HttpCode(200)
   @ApiOperation({ summary: 'Login to your account.' })
   @ResponseMessage({ message: 'User logged in successfully.' })
   async login(@Body() login: LoginDto) {
@@ -31,6 +39,7 @@ export class AuthController {
   }
 
   @Post('/logout')
+  @HttpCode(200)
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Logout from your account.' })
   @ResponseMessage({ message: 'User logged out successfully.' })
@@ -39,6 +48,7 @@ export class AuthController {
   }
 
   @Post('/change-password')
+  @HttpCode(200)
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Change password.' })
   @ResponseMessage({ message: 'Password changed successfully.' })
@@ -47,6 +57,7 @@ export class AuthController {
   }
 
   @Post('/request-reset-password')
+  @HttpCode(200)
   @ApiOperation({ summary: 'Request password reset.' })
   @ResponseMessage({ message: 'Password reset link sent to your email.' })
   async requestResetPassword(@Body() body: RequestResetPasswordDto) {

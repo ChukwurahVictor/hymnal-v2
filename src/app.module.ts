@@ -13,6 +13,8 @@ import { UserModule } from './user/user.module';
 import { ChorusModule } from './chorus/chorus.module';
 import { VerseModule } from './verse/verse.module';
 import { AuditLogModule } from './audit-log/audit-log.module';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 
 @Global()
 @Module({
@@ -37,8 +39,25 @@ import { AuditLogModule } from './audit-log/audit-log.module';
     ChorusModule,
     VerseModule,
     AuditLogModule,
+    ThrottlerModule.forRoot({
+      throttlers: [
+        {
+          name: 'default',
+          ttl: 60000,
+          limit: 10,
+        },
+      ],
+    }),
   ],
-  providers: [PrismaService, JwtService, JwtStrategy],
+  providers: [
+    PrismaService,
+    JwtService,
+    JwtStrategy,
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
   exports: [AuthModule, JwtService],
 })
 export class AppModule {}

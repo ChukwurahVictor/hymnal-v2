@@ -135,4 +135,22 @@ export class AppUtilities {
       .replace(/[\s]+/g, '-')
       .replace(/[^\w-]+/g, '');
   }
+
+  public static parseArray = (raw: string) => {
+    if (!raw) return [];
+    try {
+      const parsed = JSON.parse(raw);
+      // If it's a single object, wrap in array
+      return Array.isArray(parsed) ? parsed : [parsed];
+    } catch {
+      // Attempt to repair malformed comma-separated objects
+      const fixed = `[${raw}]`;
+      try {
+        const parsed = JSON.parse(fixed);
+        return Array.isArray(parsed) ? parsed : [parsed];
+      } catch {
+        return [];
+      }
+    }
+  };
 }

@@ -28,7 +28,7 @@ export class ChorusService {
           hymnId,
           text,
           createdAt: new Date(),
-          updatedBy: user?.id || null,
+          updatedById: user?.id || null,
         },
       });
 
@@ -83,7 +83,7 @@ export class ChorusService {
         data: {
           text,
           updatedAt: new Date(),
-          updatedBy: user.id,
+          updatedById: user.id,
         },
         select: {
           id: true,
@@ -116,7 +116,7 @@ export class ChorusService {
         where: { id },
         data: {
           deletedAt: new Date(),
-          updatedBy: user.id,
+          updatedById: user.id,
         },
         select: {
           id: true,

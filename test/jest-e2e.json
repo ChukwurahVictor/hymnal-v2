@@ -1,9 +1,18 @@
 {
   "moduleFileExtensions": ["js", "json", "ts"],
-  "rootDir": ".",
+  "rootDir": "../",
   "testEnvironment": "node",
-  "testRegex": ".e2e-spec.ts$",
+  "testMatch": ["**/?(*.)+(e2e-spec).[tj]s?(x)"],
   "transform": {
     "^.+\\.(t|j)s$": "ts-jest"
+  },
+  "setupFiles": ["dotenv/config"],
+  "globals": {
+    "DOTENV_CONFIG_PATH": ".env.test",
+    "NODE_ENV": "test"
+  },
+  "moduleNameMapper": {
+    "^src/(.*)$": "<rootDir>/src/$1",
+    "^@@/(.*)$": "<rootDir>/src/$1"
   }
 }

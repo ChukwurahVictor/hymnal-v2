@@ -111,7 +111,7 @@ export class CategoryService {
         data: {
           ...updateData,
           updatedAt: new Date(),
-          updatedBy: user.id,
+          updatedById: user.id,
         },
         select: {
           id: true,
@@ -147,7 +147,7 @@ export class CategoryService {
         },
         data: {
           deletedAt: new Date(),
-          updatedBy: user.id,
+          updatedById: user.id,
           updatedAt: new Date(),
         },
         select: {

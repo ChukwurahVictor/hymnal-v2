@@ -3,4 +3,5 @@ export enum CacheKeysEnums {
   DOMAINS = 'Hymnal:Domains',
   PERMISSIONS = 'Hymnal:Permissions',
   REQUESTS = 'Hymnal:Requests',
+  HYMNS = 'Hymnal:Hymns',
 }

@@ -6,6 +6,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { RequestInterceptor } from './common/interceptors/request.interceptor';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { ErrorsInterceptor } from './common/interceptors/error.interceptor';
+import helmet from 'helmet';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -31,6 +32,8 @@ async function bootstrap() {
 
   app.enableCors();
 
+  app.use(helmet());
+
   app.useGlobalInterceptors(
     new RequestInterceptor(),
     new ResponseInterceptor(),
@@ -38,7 +41,11 @@ async function bootstrap() {
   );
 
   app.useGlobalPipes(
-    new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }),
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
   );
 
   // app.useGlobalFilters(new ValidationExceptionFilter());

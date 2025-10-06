@@ -7,59 +7,140 @@ import {
 import { CacheService } from 'src/common/cache/cache.service';
 import { PrismaService } from 'src/common/prisma/prisma.service';
 import { CreateHymnDto } from './dto/create-hymn.dto';
-import { User } from '@prisma/client';
+import { Prisma, User } from '@prisma/client';
 import { AppUtilities } from 'src/common/utilities';
 import { UpdateHymnDto } from './dto/update-hymn.dto';
 import { AuditLogService } from 'src/audit-log/audit-log.service';
+import { CrudService } from '@@/common/database/crud.service';
+import { FetchHymnsDto } from '@@/hymn/dto/fetch-hymn.dto';
+import { CacheKeysEnums } from '@@/common/cache/cache.enum';
+import { CloudinaryService } from '@@/common/cloudinary/cloudinary.service';
 
 @Injectable()
-export class HymnService {
+export class HymnService extends CrudService<Prisma.HymnDelegate, any> {
   constructor(
     private prisma: PrismaService,
     private cacheService: CacheService,
     private auditService: AuditLogService,
-  ) {}
+    private cloudinaryService: CloudinaryService,
+  ) {
+    super(prisma.hymn);
+  }
 
   /**
-   * Creates a new hymn with the provided data.
-   * @param createData
-   * @param user
-   * @returns The created hymn data.
-   * @throws ConflictException if a hymn with the same number already exists.
+   * Creates a new hymn with the provided data and uploads optional solfa image.
+   * @param createData The data for creating the hymn.
+   * @param user The user creating the hymn.
+   * @param file Optional solfa image file.
+   * @returns The created hymn data including solfa image.
+   * @throws ConflictException if a hymn with the same number or slug already exists.
    */
-  async createHymn(createData: CreateHymnDto, user: User) {
-    const { number, title, categoryId, author } = createData;
+  async createHymn(
+    createData: CreateHymnDto,
+    user: User,
+    file?: Express.Multer.File,
+  ) {
+    console.log('Create Hymn Data:', createData);
+    const {
+      number,
+      title,
+      categoryId,
+      author,
+      language,
+      version,
+      verses,
+      choruses,
+    } = createData;
     const slug = AppUtilities.slugify(title);
+
     try {
-      const createdHymn = await this.prisma.hymn.create({
-        data: {
-          number,
-          title,
-          slug,
-          categoryId,
-          author,
-          createdAt: new Date(),
-          updatedBy: user.id,
-        },
-      });
+      return await this.prisma.$transaction(async (tx) => {
+        // Create hymn Record
+        const hymn = await tx.hymn.create({
+          data: {
+            number,
+            title,
+            slug,
+            categoryId,
+            author,
+            language,
+            version,
+            createdById: user.id,
+            updatedById: user.id,
+          },
+        });
 
-      await this.auditService.log({
-        action: 'CREATE',
-        entityType: 'HYMN',
-        entityId: user.id,
-        userId: user.id,
-        description: `Hymn ${title} with slug ${slug} was created in Category ${categoryId} by  user ${user.id}`,
-      });
+        // Upload solfa image (if any)
+        if (file) {
+          const uploadResult = await this.cloudinaryService.uploadImage(
+            file,
+            'hymns/solfa',
+            file.originalname,
+          );
 
-      return createdHymn;
+          await tx.solfaImage.create({
+            data: {
+              hymnId: hymn.id,
+              imageUrl: uploadResult?.secure_url,
+              createdById: user.id,
+            },
+          });
+        }
+
+        // Create verses (if any)
+        if (verses?.length) {
+          await tx.verse.createMany({
+            data: verses.map((v, idx) => ({
+              hymnId: hymn.id,
+              text: v.text,
+              order: v.order ?? idx + 1,
+              createdById: user.id,
+            })),
+          });
+        }
+
+        // Step 4: Create choruses (if any)
+        if (choruses?.length) {
+          await tx.chorus.createMany({
+            data: choruses.map((c, idx) => ({
+              hymnId: hymn.id,
+              text: c.text,
+              order: c.order ?? idx + 1,
+              createdById: user.id,
+            })),
+          });
+        }
+
+        // Log audit
+        await this.auditService.log({
+          action: 'CREATE',
+          entityType: 'HYMN',
+          entityId: hymn.id,
+          userId: user.id,
+          description: `Hymn "${title}" created with ${verses?.length ?? 0} verses and ${choruses?.length ?? 0} choruses by user ${user.id}`,
+        });
+
+        // Return hymn with relations
+        return await tx.hymn.findUnique({
+          where: { id: hymn.id },
+          include: {
+            verses: true,
+            choruses: true,
+            solfaImages: true,
+            category: true,
+          },
+        });
+      });
     } catch (error) {
+      console.error('Error creating hymn:', error);
+
       if (error.code === 'P2002') {
-        throw new ConflictException('Hymn already exists.');
-      } else {
-        throw new NotFoundException(
-          'An error occurred while creating the hymn.',
+        throw new ConflictException(
+          'A hymn with this title or number already exists.',
         );
       }
+
+      throw new NotFoundException('An error occurred while creating the hymn.');
     }
   }
 
@@ -67,13 +148,59 @@ export class HymnService {
    * Fetches all hymns from the database.
    * @returns An array of hymn data.
    */
-  async fetchHymns() {
+  async fetchHymns({
+    orderBy,
+    direction,
+    cursor,
+    size,
+    ...dto
+  }: FetchHymnsDto) {
+    const parsedFilterQuery = await this.parseQueryFilter(dto, [
+      'title|contains',
+      'number|equals',
+      'author|contains',
+    ]);
+
+    // Generate a cache key (unique to query + pagination params)
+    const cacheKey = `${CacheKeysEnums.HYMNS}:${JSON.stringify({
+      orderBy,
+      direction,
+      cursor,
+      size,
+      ...dto,
+    })}`;
+
     try {
-      const hymns = await this.prisma.hymn.findMany({
-        where: { deletedAt: null },
-        orderBy: { createdAt: 'desc' },
+      // Check cache first
+      const cachedData = await this.cacheService.get(cacheKey);
+      if (cachedData) {
+        return cachedData;
+      }
+
+      const args: Prisma.HymnFindManyArgs = {
+        where: {
+          deletedAt: null,
+          ...parsedFilterQuery,
+        },
+        include: {
+          category: true,
+        },
+        orderBy: orderBy
+          ? { [orderBy]: direction ?? 'asc' }
+          : { createdAt: 'desc' },
+      };
+
+      const result = await this.findManyPaginate(args, {
+        cursor,
+        direction,
+        orderBy: orderBy,
+        size,
       });
-      return hymns;
+
+      // Cache the result for future requests
+      await this.cacheService.set(cacheKey, result, 300000);
+
+      return result;
     } catch (error) {
       throw error;
     }
@@ -126,7 +253,7 @@ export class HymnService {
           slug,
           categoryId,
           author,
-          updatedBy: user.id,
+          updatedById: user.id,
           updatedAt: new Date(),
         },
         select: {
@@ -182,7 +309,7 @@ export class HymnService {
           where: { id },
           data: {
             deletedAt,
-            updatedBy: user.id,
+            updatedById: user.id,
             updatedAt: new Date(),
           },
           select: {
@@ -203,7 +330,7 @@ export class HymnService {
           },
           data: {
             deletedAt,
-            updatedBy: user.id,
+            updatedById: user.id,
             updatedAt: new Date(),
           },
         });
@@ -216,7 +343,7 @@ export class HymnService {
           },
           data: {
             deletedAt,
-            updatedBy: user.id,
+            updatedById: user.id,
             updatedAt: new Date(),
           },
         });
@@ -323,7 +450,7 @@ export class HymnService {
         const hymn = await prisma.hymn.findFirst({
           where: {
             id,
-            deletedAt: { not: null }, // Only find deleted hymns
+            deletedAt: { not: null },
           },
           select: { id: true, title: true },
         });
@@ -337,7 +464,7 @@ export class HymnService {
           where: { id },
           data: {
             deletedAt: null,
-            updatedBy: user.id,
+            updatedById: user.id,
             updatedAt: new Date(),
           },
           select: {
@@ -353,11 +480,11 @@ export class HymnService {
         await prisma.verse.updateMany({
           where: {
             hymnId: id,
-            deletedAt: { not: null }, // Only restore deleted verses
+            deletedAt: { not: null },
           },
           data: {
             deletedAt: null,
-            updatedBy: user.id,
+            updatedById: user.id,
             updatedAt: new Date(),
           },
         });
@@ -366,11 +493,11 @@ export class HymnService {
         await prisma.chorus.updateMany({
           where: {
             hymnId: id,
-            deletedAt: { not: null }, // Only restore deleted choruses
+            deletedAt: { not: null },
           },
           data: {
             deletedAt: null,
-            updatedBy: user.id,
+            updatedById: user.id,
             updatedAt: new Date(),
           },
         });

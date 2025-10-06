@@ -50,13 +50,22 @@ model User {
   role       Roles      @default(User)
   status     UserStatus @default(Active)
   createdAt  DateTime   @default(now()) @db.Timestamptz(6)
-  createdBy  String?
   updatedAt  DateTime   @updatedAt() @db.Timestamptz(6)
-  updatedBy  String?
-  hymns      Hymn[]     @relation("UserHymns")
-  categories Category[] @relation("UserCategories")
-  auditLogs  AuditLog[]
   deletedAt  DateTime?  @db.Timestamptz(6)
+
+  // Relationships
+  hymnsCreated      Hymn[]      @relation("UserCreatedHymns")
+  hymnsUpdated      Hymn[]      @relation("UserUpdatedHymns")
+  categoriesCreated Category[]  @relation("UserCreatedCategories")
+  categoriesUpdated Category[]  @relation("UserUpdatedCategories")
+  versesCreated     Verse[]     @relation("UserCreatedVerses")
+  versesUpdated     Verse[]     @relation("UserUpdatedVerses")
+  chorusesCreated   Chorus[]    @relation("UserCreatedChoruses")
+  chorusesUpdated   Chorus[]    @relation("UserUpdatedChoruses")
+  solfaImagesCreated SolfaImage[] @relation("UserCreatedSolfaImages")
+  solfaImagesUpdated SolfaImage[] @relation("UserUpdatedSolfaImages")
+
+  auditLogs  AuditLog[]
 
   @@index([email])
   @@map("users")
@@ -68,7 +77,7 @@ model Hymn {
   title       String
   slug        String       @unique
   category    Category?    @relation(fields: [categoryId], references: [id])
-  categoryId  String       @db.Uuid
+  categoryId  String?      @db.Uuid
   author      String?
   language    String?
   version     String?
@@ -76,11 +85,14 @@ model Hymn {
   choruses    Chorus[]     @relation("HymnChoruses")
   solfaImages SolfaImage[] @relation("HymnSolfaImages")
   status      HymnStatus   @default(Published)
-  createdBy   User?        @relation("UserHymns", fields: [createdById], references: [id])
+
+  createdBy   User?        @relation("UserCreatedHymns", fields: [createdById], references: [id])
   createdById String?      @db.Uuid
+  updatedBy   User?        @relation("UserUpdatedHymns", fields: [updatedById], references: [id])
+  updatedById String?      @db.Uuid
+
   createdAt   DateTime     @default(now()) @db.Timestamptz(6)
   updatedAt   DateTime     @updatedAt() @db.Timestamptz(6)
-  updatedBy   String?
   deletedAt   DateTime?    @db.Timestamptz(6)
 
   @@index([title])
@@ -95,11 +107,14 @@ model Category {
   name        String
   slug        String    @unique
   hymns       Hymn[]
-  createdBy   User?     @relation("UserCategories", fields: [createdById], references: [id])
+
+  createdBy   User?     @relation("UserCreatedCategories", fields: [createdById], references: [id])
   createdById String?   @db.Uuid
+  updatedBy   User?     @relation("UserUpdatedCategories", fields: [updatedById], references: [id])
+  updatedById String?   @db.Uuid
+
   createdAt   DateTime  @default(now()) @db.Timestamptz(6)
   updatedAt   DateTime  @updatedAt() @db.Timestamptz(6)
-  updatedBy   String?
   deletedAt   DateTime? @db.Timestamptz(6)
 
   @@index([name])
@@ -107,41 +122,57 @@ model Category {
 }
 
 model Chorus {
-  id        String    @id @default(uuid()) @db.Uuid
-  text      String
-  hymn      Hymn      @relation("HymnChoruses", fields: [hymnId], references: [id])
-  hymnId    String    @db.Uuid
-  description String? @db.Text
-  createdAt DateTime  @default(now()) @db.Timestamptz(6)
-  updatedAt DateTime  @updatedAt() @db.Timestamptz(6)
-  updatedBy String?
-  deletedAt DateTime? @db.Timestamptz(6)
+  id          String    @id @default(uuid()) @db.Uuid
+  text        String
+  description String?   @db.Text
+  hymn        Hymn      @relation("HymnChoruses", fields: [hymnId], references: [id])
+  hymnId      String    @db.Uuid
+
+  createdBy   User?     @relation("UserCreatedChoruses", fields: [createdById], references: [id])
+  createdById String?   @db.Uuid
+  updatedBy   User?     @relation("UserUpdatedChoruses", fields: [updatedById], references: [id])
+  updatedById String?   @db.Uuid
+
+  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime  @updatedAt() @db.Timestamptz(6)
+  deletedAt   DateTime? @db.Timestamptz(6)
 
   @@map("choruses")
 }
 
 model Verse {
-  id        String    @id @default(uuid()) @db.Uuid
-  text      String
-  hymn      Hymn      @relation("HymnVerses", fields: [hymnId], references: [id])
-  order     Int?
-  hymnId    String    @db.Uuid
-  createdAt DateTime  @default(now()) @db.Timestamptz(6)
-  updatedAt DateTime  @updatedAt() @db.Timestamptz(6)
-  updatedBy String?
-  deletedAt DateTime? @db.Timestamptz(6)
+  id          String    @id @default(uuid()) @db.Uuid
+  text        String
+  order       Int?
+  hymn        Hymn      @relation("HymnVerses", fields: [hymnId], references: [id])
+  hymnId      String    @db.Uuid
+
+  createdBy   User?     @relation("UserCreatedVerses", fields: [createdById], references: [id])
+  createdById String?   @db.Uuid
+  updatedBy   User?     @relation("UserUpdatedVerses", fields: [updatedById], references: [id])
+  updatedById String?   @db.Uuid
+
+  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime  @updatedAt() @db.Timestamptz(6)
+  deletedAt   DateTime? @db.Timestamptz(6)
 
   @@map("verses")
 }
 
 model SolfaImage {
-  id        String    @id @default(uuid()) @db.Uuid
-  imageUrl  String
-  hymn      Hymn      @relation("HymnSolfaImages", fields: [hymnId], references: [id])
-  hymnId    String    @db.Uuid
-  createdAt DateTime  @default(now()) @db.Timestamptz(6)
-  updatedAt DateTime  @updatedAt() @db.Timestamptz(6)
-  deletedAt DateTime? @db.Timestamptz(6)
+  id          String    @id @default(uuid()) @db.Uuid
+  imageUrl    String
+  hymn        Hymn      @relation("HymnSolfaImages", fields: [hymnId], references: [id])
+  hymnId      String    @db.Uuid
+
+  createdBy   User?     @relation("UserCreatedSolfaImages", fields: [createdById], references: [id])
+  createdById String?   @db.Uuid
+  updatedBy   User?     @relation("UserUpdatedSolfaImages", fields: [updatedById], references: [id])
+  updatedById String?   @db.Uuid
+
+  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime  @updatedAt() @db.Timestamptz(6)
+  deletedAt   DateTime? @db.Timestamptz(6)
 
   @@map("solfa_images")
 }
@@ -150,12 +181,14 @@ model AuditLog {
   id         String     @id @default(uuid()) @db.Uuid
   action     ActionType
   entityType EntityType
-  entityId   String
+  entityId   String?
   details    Json?
   ipAddress  String?
   userAgent  String?
-  userId     String     @db.Uuid
+
   user       User       @relation(fields: [userId], references: [id])
+  userId     String     @db.Uuid
+
   createdAt  DateTime   @default(now())
 
   @@map("audit_logs")
