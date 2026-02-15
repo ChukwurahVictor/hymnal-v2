@@ -13,7 +13,7 @@ import { ResponseMessage } from 'src/common/decorators/response.decorator';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { GetUser } from 'src/common/decorators/get-user.decorator';
 import { User } from '@prisma/client';
-import { JwtAuthGuard } from 'src/auth/guard/jwt.guard';
+import { JwtAuthGuard } from 'src/modules/auth/guard/jwt.guard';
 
 @ApiBearerAuth()
 @ApiTags('Category')

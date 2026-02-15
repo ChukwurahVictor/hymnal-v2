@@ -10,7 +10,7 @@ import {
 import { VerseService } from './verse.service';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ResponseMessage } from 'src/common/decorators/response.decorator';
-import { JwtAuthGuard } from 'src/auth/guard/jwt.guard';
+import { JwtAuthGuard } from 'src/modules/auth/guard/jwt.guard';
 import { CreateVerseDto } from './dto/create-verse.dto';
 import { User } from '@prisma/client';
 import { GetUser } from 'src/common/decorators/get-user.decorator';

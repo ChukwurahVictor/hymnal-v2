@@ -16,9 +16,9 @@ import { ChangePasswordDto } from './dto/change-password.dto';
 import { User } from '@prisma/client';
 import { CacheService } from 'src/common/cache/cache.service';
 import { CacheKeysEnums } from 'src/common/cache/cache.enum';
-import { AuditLogService } from 'src/audit-log/audit-log.service';
+import { AuditLogService } from 'src/common/audit-log/audit-log.service';
+import { MessagingQueueProducer } from 'src/common/messaging/queue/producer';
 // import { ResetPasswordDto } from './dto/reset-password.dto';
-// import { MessagingQueueProducer } from 'src/common/messaging/queue/producer';
 
 @Injectable()
 export class AuthService {
@@ -28,7 +28,7 @@ export class AuthService {
     private config: ConfigService,
     private cacheService: CacheService,
     private auditService: AuditLogService,
-    // private messagingQueue: MessagingQueueProducer,
+    private messagingQueue: MessagingQueueProducer,
   ) {}
 
   private async signToken(userId: string, email: string) {
@@ -176,15 +176,15 @@ export class AuthService {
 
     if (!user) throw new UnauthorizedException('Incorrect Credentials');
 
-    // const generatedToken = AppUtilities.generateRandomNumber();
+    const generatedToken = AppUtilities.generateToken();
 
-    // await this.cacheService.set(generatedToken, user);
+    await this.cacheService.set(generatedToken, user);
 
-    // await this.messagingQueue.queueResetTokenEmail({
-    //   email,
-    //   firstName: user.firstName,
-    //   link: generatedToken,
-    // });
+    await this.messagingQueue.queueResetTokenEmail({
+      email,
+      firstName: user.firstName,
+      link: generatedToken,
+    });
 
     return {
       message: 'Password reset link sent to your email',

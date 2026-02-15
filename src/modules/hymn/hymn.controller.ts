@@ -21,14 +21,14 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { ResponseMessage } from 'src/common/decorators/response.decorator';
-import { JwtAuthGuard } from 'src/auth/guard/jwt.guard';
+import { JwtAuthGuard } from 'src/modules/auth/guard/jwt.guard';
 import { CreateHymnDto } from './dto/create-hymn.dto';
 import { User } from '@prisma/client';
 import { GetUser } from 'src/common/decorators/get-user.decorator';
-import { UpdateHymnDto } from 'src/hymn/dto/update-hymn.dto';
+import { UpdateHymnDto } from './dto/update-hymn.dto';
 import { Throttle } from '@nestjs/throttler';
-import { FetchHymnsDto } from '@@/hymn/dto/fetch-hymn.dto';
-import { AdminAuthGuard } from '@@/auth/guard/auth.guard';
+import { FetchHymnsDto } from '@@/modules/hymn/dto/fetch-hymn.dto';
+import { AdminAuthGuard } from '@@/modules/auth/guard/auth.guard';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ParseJsonPipe } from '@@/common/utilities/parse-json.pipe';
 

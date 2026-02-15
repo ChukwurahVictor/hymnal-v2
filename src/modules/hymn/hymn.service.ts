@@ -10,9 +10,9 @@ import { CreateHymnDto } from './dto/create-hymn.dto';
 import { Prisma, User } from '@prisma/client';
 import { AppUtilities } from 'src/common/utilities';
 import { UpdateHymnDto } from './dto/update-hymn.dto';
-import { AuditLogService } from 'src/audit-log/audit-log.service';
+import { AuditLogService } from 'src/common/audit-log/audit-log.service';
 import { CrudService } from '@@/common/database/crud.service';
-import { FetchHymnsDto } from '@@/hymn/dto/fetch-hymn.dto';
+import { FetchHymnsDto } from '@@/modules/hymn/dto/fetch-hymn.dto';
 import { CacheKeysEnums } from '@@/common/cache/cache.enum';
 import { CloudinaryService } from '@@/common/cloudinary/cloudinary.service';
 

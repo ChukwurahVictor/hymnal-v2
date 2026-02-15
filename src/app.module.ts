@@ -1,18 +1,18 @@
 import { Global, Module } from '@nestjs/common';
-import { AuthModule } from './auth/auth.module';
-import { CategoryModule } from './category/category.module';
-import { HymnModule } from './hymn/hymn.module';
+import { AuthModule } from './modules/auth/auth.module';
+import { CategoryModule } from './modules/category/category.module';
+import { HymnModule } from './modules/hymn/hymn.module';
 import { JwtModule, JwtService } from '@nestjs/jwt';
 import { PrismaService } from './common/prisma/prisma.service';
-import { JwtStrategy } from './auth/strategy/jwt.strategy';
+import { JwtStrategy } from './modules/auth/strategy/jwt.strategy';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import appConfig from './app.config';
 import { CacheModule } from './common/cache/cache.module';
 import { PassportModule } from '@nestjs/passport';
-import { UserModule } from './user/user.module';
-import { ChorusModule } from './chorus/chorus.module';
-import { VerseModule } from './verse/verse.module';
-import { AuditLogModule } from './audit-log/audit-log.module';
+import { UserModule } from './modules/user/user.module';
+import { ChorusModule } from './modules/chorus/chorus.module';
+import { VerseModule } from './modules/verse/verse.module';
+import { AuditLogModule } from './common/audit-log/audit-log.module';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 

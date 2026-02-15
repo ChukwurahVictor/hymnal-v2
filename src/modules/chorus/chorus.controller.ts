@@ -8,7 +8,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ChorusService } from './chorus.service';
-import { JwtAuthGuard } from 'src/auth/guard/jwt.guard';
+import { JwtAuthGuard } from 'src/modules/auth/guard/jwt.guard';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ResponseMessage } from 'src/common/decorators/response.decorator';
 import { CreateChorusDto } from './dto/create-chorus.dto';
